@@ -15,7 +15,6 @@ export default function Daily() {
 
   const badWords = ['비난', '욕설'];
 
-  // 현재 로그인 유저 정보 확인
   useEffect(() => {
     const getUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -28,7 +27,6 @@ export default function Daily() {
     fetchPosts();
   }, []);
 
-  // DB에서 글 목록 불러오기
   const fetchPosts = async () => {
     const { data, error } = await supabase
       .from('daily_posts')
@@ -40,7 +38,6 @@ export default function Daily() {
     }
   };
 
-  // 로그아웃
   const handleLogout = async () => {
     await supabase.auth.signOut();
     setUser(null);
@@ -48,7 +45,6 @@ export default function Daily() {
     alert('로그아웃 되었습니다.');
   };
 
-  // 글 등록
   const handlePostSubmit = async () => {
     if (!user) {
       alert('글을 작성하려면 먼저 로그인해야 합니다.');
@@ -88,7 +84,6 @@ export default function Daily() {
     }
   };
 
-  // 관리자 전용: 글 삭제 기능
   const handleDeletePost = async (id) => {
     if (!isAdmin) return;
     if (confirm('정말 이 게시글을 삭제하시겠습니까?')) {
@@ -107,17 +102,24 @@ export default function Daily() {
 
   return (
     <div style={{ padding: '20px', backgroundColor: '#0f172a', color: '#fff', minHeight: '100vh' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h1>💬 하루 글 (자유 게시판)</h1>
+      {/* 상단 네비게이션 내비바 */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', borderBottom: '1px solid #334155', paddingBottom: '15px' }}>
+        <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
+          <Link href="/" style={{ color: '#94a3b8', textDecoration: 'none', fontWeight: 'bold' }}>
+            🏠 메인 홈
+          </Link>
+          <h1 style={{ fontSize: '20px', margin: 0 }}>💬 하루 글 (자유 게시판)</h1>
+        </div>
+
         <div>
           {user ? (
             <div>
               <span>👤 {user.email} {isAdmin ? '👑(관리자)' : ''} </span>
-              <button onClick={handleLogout} style={{ marginLeft: '10px', padding: '5px 10px' }}>로그아웃</button>
+              <button onClick={handleLogout} style={{ marginLeft: '10px', padding: '6px 12px', backgroundColor: '#ef4444', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>로그아웃</button>
             </div>
           ) : (
-            <Link href="/login" style={{ color: '#60a5fa', textDecoration: 'underline' }}>
-              🔐 로그인 / 회원가입 하러가기
+            <Link href="/login" style={{ padding: '8px 16px', backgroundColor: '#3b82f6', color: '#fff', textDecoration: 'none', borderRadius: '6px', fontWeight: 'bold' }}>
+              🔐 로그인 / 회원가입
             </Link>
           )}
         </div>
@@ -134,9 +136,9 @@ export default function Daily() {
             value={inputText} 
             onChange={(e) => setInputText(e.target.value)}
             placeholder="하고 싶은 말을 적어주세요."
-            style={{ width: '300px', padding: '8px', marginRight: '10px', color: '#000' }}
+            style={{ width: '300px', padding: '8px', marginRight: '10px', color: '#000', borderRadius: '4px' }}
           />
-          <button onClick={handlePostSubmit} style={{ padding: '8px 16px' }}>글 등록</button>
+          <button onClick={handlePostSubmit} style={{ padding: '8px 16px', backgroundColor: '#10b981', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>글 등록</button>
         </div>
       ) : (
         <p style={{ color: '#f87171', margin: '20px 0' }}>글을 작성하려면 로그인이 필요합니다.</p>
@@ -151,7 +153,7 @@ export default function Daily() {
               {isAdmin && (
                 <button 
                   onClick={() => handleDeletePost(post.id)}
-                  style={{ marginLeft: '10px', color: 'red', cursor: 'pointer' }}
+                  style={{ marginLeft: '10px', color: '#ef4444', background: 'none', border: 'none', cursor: 'pointer' }}
                 >
                   [삭제]
                 </button>
