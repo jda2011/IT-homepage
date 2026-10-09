@@ -1,0 +1,26 @@
+:root {
+  --bg-color: #ffffff;
+  --bg-card: #f8fafc;
+  --text-color: #0f172a;
+  --text-sub: #475569;
+  --border-color: #e2e8f0;
+  --input-bg: #ffffff;
+}
+
+[data-theme='dark'] {
+  --bg-color: #0f172a;
+  --bg-card: #1e293b;
+  --text-color: #f8fafc;
+  --text-sub: #94a3b8;
+  --border-color: #334155;
+  --input-bg: #1e293b;
+}
+
+body {
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  margin: 0;
+  padding: 0;
+  font-family: system-ui, -apple-system, sans-serif;
+  transition: background-color 0.3s, color 0.3s;
+}
