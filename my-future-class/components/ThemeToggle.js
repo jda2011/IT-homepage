@@ -9,6 +9,7 @@ export default function ThemeToggle() {
     const savedTheme = localStorage.getItem('theme') || 'dark';
     setTheme(savedTheme);
     document.documentElement.setAttribute('data-theme', savedTheme);
+    document.body.setAttribute('data-theme', savedTheme);
   }, []);
 
   const toggleTheme = () => {
@@ -16,13 +17,14 @@ export default function ThemeToggle() {
     setTheme(nextTheme);
     localStorage.setItem('theme', nextTheme);
     document.documentElement.setAttribute('data-theme', nextTheme);
+    document.body.setAttribute('data-theme', nextTheme);
   };
 
   return (
     <button
       onClick={toggleTheme}
       style={{
-        padding: '6px 12px',
+        padding: '8px 14px',
         borderRadius: '20px',
         border: '1px solid var(--border-color)',
         backgroundColor: 'var(--bg-card)',
@@ -33,7 +35,7 @@ export default function ThemeToggle() {
         display: 'flex',
         alignItems: 'center',
         gap: '6px',
-        transition: 'all 0.2s ease'
+        boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
       }}
     >
       {theme === 'dark' ? '☀️ 라이트 모드' : '🌙 다크 모드'}
