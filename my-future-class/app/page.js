@@ -10,6 +10,9 @@ export default function HomePage() {
   const [user, setUser] = useState(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [mainPhotoUrl, setMainPhotoUrl] = useState('');
+  const [classMotto, setClassMotto] = useState('배움과 성장이 있는 공간'); // 기본 급훈
+  const [isEditingMotto, setIsEditingMotto] = useState(false);
+  const [newMottoInput, setNewMottoInput] = useState('');
   const [isUploading, setIsUploading] = useState(false);
   const [recentPosts, setRecentPosts] = useState([]);
 
@@ -21,22 +24,49 @@ export default function HomePage() {
         setIsAdmin(checkIsAdmin(user.email));
       }
       fetchMainPhoto();
+      fetchClassMotto();
       fetchRecentPosts();
     };
     init();
   }, []);
 
+  // 메인 사진 불러오기
   const fetchMainPhoto = async () => {
     const { data } = await supabase.from('settings').select('value').eq('key', 'main_photo').single();
     if (data?.value) setMainPhotoUrl(data.value);
   };
 
+  // 급훈 불러오기
+  const fetchClassMotto = async () => {
+    const { data } = await supabase.from('settings').select('value').eq('key', 'class_motto').single();
+    if (data?.value) {
+      setClassMotto(data.value);
+      setNewMottoInput(data.value);
+    }
+  };
+
+  // 최근 하루 글 불러오기
   const fetchRecentPosts = async () => {
     const { data } = await supabase.from('daily_posts').select('*').order('created_at', { ascending: false }).limit(3);
     if (data) setRecentPosts(data);
   };
 
-  // 메인 학급 사진 등록 (관리자 기능)
+  // 급훈 저장 (관리자 기능)
+  const handleSaveMotto = async () => {
+    if (!isAdmin) return;
+    if (!newMottoInput.trim()) return alert('급훈을 입력해주세요.');
+
+    const { error } = await supabase.from('settings').upsert({ key: 'class_motto', value: newMottoInput });
+    if (!error) {
+      setClassMotto(newMottoInput);
+      setIsEditingMotto(false);
+      alert('급훈이 수정되었습니다!');
+    } else {
+      alert(`급훈 수정 실패: ${error.message}`);
+    }
+  };
+
+  // 메인 사진 업로드 (관리자 기능)
   const handleMainPhotoUpload = async (e) => {
     const file = e.target.files[0];
     if (!file || !isAdmin) return;
@@ -52,11 +82,10 @@ export default function HomePage() {
       const { data: urlData } = supabase.storage.from('members').getPublicUrl(filePath);
       const publicUrl = urlData.publicUrl;
 
-      // DB에 메인 사진 URL 저장
       await supabase.from('settings').upsert({ key: 'main_photo', value: publicUrl });
 
       setMainPhotoUrl(publicUrl);
-      alert('메인 학급 사진이 업데이트 되었습니다!');
+      alert('메인 사진이 업데이트 되었습니다!');
     } catch (err) {
       alert(`사진 업로드 실패: ${err.message}`);
     } finally {
@@ -77,11 +106,11 @@ export default function HomePage() {
       <header style={{ borderBottom: '1px solid var(--border-color)', backgroundColor: 'var(--bg-card)' }}>
         <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '15px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           
-          {/* 전인고 로고 이미지 */}
+          {/* 로고 & 상단 제목 */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <img src="/logo.png" alt="전인고 로고" style={{ width: '45px', height: '45px', objectFit: 'contain' }} />
             <div>
-              <h1 style={{ fontSize: '20px', margin: 0, fontWeight: 'bold' }}>전인고등학교 학급 홈페이지</h1>
+              <h1 style={{ fontSize: '20px', margin: 0, fontWeight: 'bold' }}>미래공학소스쿨 홈페이지</h1>
               <p style={{ fontSize: '13px', margin: 0, color: 'var(--text-sub)' }}>우리들의 따뜻한 소통 공간</p>
             </div>
           </div>
@@ -113,7 +142,7 @@ export default function HomePage() {
               💬 하루 글 (게시판)
             </Link>
             <Link href="/members" style={{ padding: '14px 0', color: 'var(--text-color)', textDecoration: 'none', fontWeight: '500' }}>
-              👥 학급 구성원
+              👥 소스쿨 구성원
             </Link>
           </div>
         </nav>
@@ -122,24 +151,50 @@ export default function HomePage() {
       {/* 3. 본문 영역 */}
       <main style={{ maxWidth: '1100px', margin: '25px auto', padding: '0 20px' }}>
         
-        {/* 설명 배너 */}
+        {/* 설명 배너 & 급훈 영역 */}
         <section style={{ backgroundColor: '#2563eb', color: '#fff', padding: '30px', borderRadius: '12px', marginBottom: '20px' }}>
-          <span style={{ backgroundColor: 'rgba(255,255,255,0.2)', padding: '4px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: 'bold' }}>
-            2026학년도 우리반 홈페이지
-          </span>
-          <h2 style={{ fontSize: '24px', margin: '10px 0 8px 0' }}>반갑습니다! 우리들의 활기찬 학급 공간입니다 🌟</h2>
+          
+          {/* 급훈 (급훈: ~) */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
+            {isEditingMotto ? (
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <span style={{ fontWeight: 'bold', fontSize: '14px' }}>급훈:</span>
+                <input
+                  type="text"
+                  value={newMottoInput}
+                  onChange={(e) => setNewMottoInput(e.target.value)}
+                  style={{ padding: '4px 8px', borderRadius: '4px', border: 'none', color: '#000', fontSize: '14px' }}
+                />
+                <button onClick={handleSaveMotto} style={{ padding: '4px 10px', backgroundColor: '#10b981', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold' }}>저장</button>
+                <button onClick={() => setIsEditingMotto(false)} style={{ padding: '4px 10px', backgroundColor: '#64748b', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}>취소</button>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span style={{ backgroundColor: 'rgba(255,255,255,0.2)', padding: '4px 12px', borderRadius: '20px', fontSize: '13px', fontWeight: 'bold' }}>
+                  급훈: {classMotto}
+                </span>
+                {isAdmin && (
+                  <button onClick={() => { setIsEditingMotto(true); setNewMottoInput(classMotto); }} style={{ backgroundColor: 'rgba(255,255,255,0.3)', color: '#fff', border: 'none', padding: '3px 8px', borderRadius: '4px', fontSize: '11px', cursor: 'pointer' }}>
+                    ✏️ 급훈 수정
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+
+          <h2 style={{ fontSize: '24px', margin: '10px 0 8px 0' }}>반갑습니다! 미래공학소스쿨 공간입니다 🌟</h2>
           <p style={{ margin: 0, opacity: 0.9, fontSize: '15px' }}>
-            하루 글 게시판에서 서로의 생각을 나누고 학급 구성원 프로필을 확인하세요.
+            하루 글 게시판에서 서로의 생각을 나누고 소스쿨 구성원 프로필을 확인하세요.
           </p>
         </section>
 
-        {/* 📷 설명 아래 학급 메인 사진 영역 */}
+        {/* 🖼️ 메인 사진 영역 */}
         <section style={{ backgroundColor: 'var(--bg-card)', padding: '20px', borderRadius: '12px', border: '1px solid var(--border-color)', marginBottom: '25px', textAlign: 'center' }}>
-          <h3 style={{ margin: '0 0 15px 0', fontSize: '18px' }}>🖼️ 우리반 메인 단체 사진</h3>
+          <h3 style={{ margin: '0 0 15px 0', fontSize: '18px' }}>🖼️ 미래공학소스쿨 메인 사진</h3>
           
           <div style={{ width: '100%', maxHeight: '450px', backgroundColor: 'var(--bg-color)', borderRadius: '8px', overflow: 'hidden', border: '1px dashed var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '220px' }}>
             {mainPhotoUrl ? (
-              <img src={mainPhotoUrl} alt="우리반 메인 사진" style={{ width: '100%', maxHeight: '450px', objectFit: 'cover' }} />
+              <img src={mainPhotoUrl} alt="메인 사진" style={{ width: '100%', maxHeight: '450px', objectFit: 'cover' }} />
             ) : (
               <p style={{ color: 'var(--text-sub)' }}>등록된 메인 사진이 없습니다.</p>
             )}
@@ -161,15 +216,19 @@ export default function HomePage() {
           <div style={{ backgroundColor: 'var(--bg-card)', padding: '20px', borderRadius: '10px', border: '1px solid var(--border-color)' }}>
             <h3 style={{ margin: '0 0 15px 0', fontSize: '18px' }}>💬 최근 하루 글</h3>
             <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-              {recentPosts.map((post) => (
-                <li key={post.id} style={{ padding: '8px 0', borderBottom: '1px solid var(--border-color)', fontSize: '14px' }}>📌 {post.text}</li>
-              ))}
+              {recentPosts.length > 0 ? (
+                recentPosts.map((post) => (
+                  <li key={post.id} style={{ padding: '8px 0', borderBottom: '1px solid var(--border-color)', fontSize: '14px' }}>📌 {post.text}</li>
+                ))
+              ) : (
+                <li style={{ padding: '10px 0', color: 'var(--text-sub)', fontSize: '14px' }}>등록된 글이 없습니다.</li>
+              )}
             </ul>
           </div>
           
           <div style={{ backgroundColor: 'var(--bg-card)', padding: '20px', borderRadius: '10px', border: '1px solid var(--border-color)' }}>
-            <h3 style={{ margin: '0 0 15px 0', fontSize: '18px' }}>👥 학급 구성원 카탈로그</h3>
-            <p style={{ color: 'var(--text-sub)', fontSize: '14px', marginBottom: '15px' }}>선생님과 학생들의 프로필 및 사진을 관리하고 조회하세요.</p>
+            <h3 style={{ margin: '0 0 15px 0', fontSize: '18px' }}>👥 소스쿨 구성원</h3>
+            <p style={{ color: 'var(--text-sub)', fontSize: '14px', marginBottom: '15px' }}>선생님과 구성원들의 프로필 및 사진을 확인하세요.</p>
             <Link href="/members" style={{ display: 'block', textAlign: 'center', padding: '10px', backgroundColor: '#2563eb', color: '#fff', borderRadius: '6px', textDecoration: 'none', fontWeight: 'bold' }}>
               구성원 보러가기 →
             </Link>
@@ -180,16 +239,3 @@ export default function HomePage() {
     </div>
   );
 }
-
-{/* 전인고 로고 이미지 */}
-<div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-  <img 
-    src="/logo.png" 
-    alt="전인고 로고" 
-    style={{ width: '45px', height: '45px', objectFit: 'contain' }} 
-  />
-  <div>
-    <h1 style={{ fontSize: '20px', margin: 0, fontWeight: 'bold' }}>전인고등학교 학급 홈페이지</h1>
-    <p style={{ fontSize: '13px', margin: 0, color: 'var(--text-sub)' }}>우리들의 따뜻한 소통 공간</p>
-  </div>
-</div>
