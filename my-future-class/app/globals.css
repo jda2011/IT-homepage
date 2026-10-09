@@ -1,22 +1,24 @@
+/* 기본 (라이트 모드) */
 :root,
 html[data-theme='light'],
 body[data-theme='light'] {
-  --bg-color: #f8fafc;
-  --bg-card: #ffffff;
-  --text-color: #0f172a;
-  --text-sub: #475569;
-  --border-color: #cbd5e1;
-  --input-bg: #ffffff;
+  --bg-color: #f8fafc !important;
+  --bg-card: #ffffff !important;
+  --text-color: #0f172a !important;
+  --text-sub: #475569 !important;
+  --border-color: #cbd5e1 !important;
+  --input-bg: #ffffff !important;
 }
 
+/* 다크 모드 */
 html[data-theme='dark'],
 body[data-theme='dark'] {
-  --bg-color: #0f172a;
-  --bg-card: #1e293b;
-  --text-color: #f8fafc;
-  --text-sub: #94a3b8;
-  --border-color: #334155;
-  --input-bg: #0f172a;
+  --bg-color: #0f172a !important;
+  --bg-card: #1e293b !important;
+  --text-color: #f8fafc !important;
+  --text-sub: #94a3b8 !important;
+  --border-color: #334155 !important;
+  --input-bg: #0f172a !important;
 }
 
 * {
@@ -32,7 +34,6 @@ html, body {
   transition: background-color 0.2s ease, color 0.2s ease;
 }
 
-/* 드롭다운 옵션 글씨가 다크모드/라이트모드 상관없이 항상 잘 보이도록 고정 */
 select option {
   background-color: #ffffff !important;
   color: #000000 !important;
