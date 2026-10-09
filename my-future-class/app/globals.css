@@ -1,13 +1,16 @@
-:root, [data-theme='light'] {
+:root,
+html[data-theme='light'],
+body[data-theme='light'] {
   --bg-color: #f8fafc;
   --bg-card: #ffffff;
   --text-color: #0f172a;
   --text-sub: #475569;
-  --border-color: #e2e8f0;
+  --border-color: #cbd5e1;
   --input-bg: #ffffff;
 }
 
-[data-theme='dark'] {
+html[data-theme='dark'],
+body[data-theme='dark'] {
   --bg-color: #0f172a;
   --bg-card: #1e293b;
   --text-color: #f8fafc;
@@ -27,4 +30,10 @@ html, body {
   padding: 0;
   font-family: system-ui, -apple-system, sans-serif;
   transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* 드롭다운 옵션 글씨가 다크모드/라이트모드 상관없이 항상 잘 보이도록 고정 */
+select option {
+  background-color: #ffffff !important;
+  color: #000000 !important;
 }
