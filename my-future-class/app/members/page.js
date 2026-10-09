@@ -11,11 +11,12 @@ export default function MembersPage() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [members, setMembers] = useState([]);
   
-  // 새 구성원 등록 입력값
-  const [name, setName] = useState('');
-  const [role, setRole] = useState('student'); // 'teacher' 또는 'student'
+  // 양식 입력 상태
+  const [name, setName] = useState('');          // 성함/이름
+  const [nickname, setNickname] = useState('');  // 이르름
+  const [role, setRole] = useState('student');    // 구분
   const [year, setYear] = useState('2026');
-  const [file, setFile] = useState(null);
+  const [file, setFile] = useState(null);         // 프로필 사진 업로드
   const [isUploading, setIsUploading] = useState(false);
   const [logoError, setLogoError] = useState(false);
 
@@ -39,7 +40,7 @@ export default function MembersPage() {
   const handleAddMember = async (e) => {
     e.preventDefault();
     if (!isAdmin) return alert('관리자만 등록할 수 있습니다.');
-    if (!name.trim()) return alert('이름을 입력해 주세요.');
+    if (!name.trim()) return alert('성함/이름을 입력해 주세요.');
 
     setIsUploading(true);
     try {
@@ -54,14 +55,18 @@ export default function MembersPage() {
         imageUrl = urlData.publicUrl;
       }
 
+      // name에 이름과 (이르름)을 함께 저장하거나 DB 컬럼 구조에 지정
+      const fullName = nickname.trim() ? `${name.trim()} (${nickname.trim()})` : name.trim();
+
       const { error } = await supabase.from('members').insert([
-        { name: name.trim(), role, year, image_url: imageUrl }
+        { name: fullName, role, year, image_url: imageUrl }
       ]);
 
       if (error) throw error;
 
       alert('구성원이 성공적으로 등록되었습니다!');
       setName('');
+      setNickname('');
       setFile(null);
       fetchMembers();
     } catch (err) {
@@ -89,7 +94,7 @@ export default function MembersPage() {
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg-color)', color: 'var(--text-color)' }}>
-      {/* 1. 상단 통일된 헤더 */}
+      {/* 1. 통일된 헤더 */}
       <header style={{ borderBottom: '1px solid var(--border-color)', backgroundColor: 'var(--bg-card)' }}>
         <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '15px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -143,41 +148,66 @@ export default function MembersPage() {
       <main style={{ maxWidth: '1100px', margin: '25px auto', padding: '0 20px' }}>
         <h2 style={{ fontSize: '22px', marginBottom: '20px' }}>👥 미래공학소스쿨 구성원 소개</h2>
 
-        {/* 관리자 전용 구성원 추가 양식 */}
+        {/* 관리자 전용 신규 구성원 등록 양식 */}
         {isAdmin && (
           <form onSubmit={handleAddMember} style={{ backgroundColor: 'var(--bg-card)', padding: '20px', borderRadius: '12px', border: '1px solid var(--border-color)', marginBottom: '30px' }}>
             <h3 style={{ margin: '0 0 15px 0', fontSize: '16px' }}>➕ 신규 구성원 등록 (관리자)</h3>
+            
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px', marginBottom: '15px' }}>
+              {/* 성함/이름 */}
               <div>
-                <label style={{ display: 'block', fontSize: '12px', marginBottom: '5px', fontWeight: 'bold' }}>이름</label>
+                <label style={{ display: 'block', fontSize: '13px', marginBottom: '5px', fontWeight: 'bold' }}>성함/이름</label>
                 <input
                   type="text"
                   placeholder="이름 작성"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid var(--border-color)', backgroundColor: 'var(--input-bg)', color: 'var(--text-color)' }}
+                  style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid var(--border-color)', backgroundColor: 'var(--input-bg)', color: 'var(--text-color)' }}
                 />
               </div>
 
+              {/* 이르름 */}
               <div>
-                <label style={{ display: 'block', fontSize: '12px', marginBottom: '5px', fontWeight: 'bold' }}>구분</label>
+                <label style={{ display: 'block', fontSize: '13px', marginBottom: '5px', fontWeight: 'bold' }}>이르름</label>
+                <input
+                  type="text"
+                  placeholder="이르름 작성"
+                  value={nickname}
+                  onChange={(e) => setNickname(e.target.value)}
+                  style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid var(--border-color)', backgroundColor: 'var(--input-bg)', color: 'var(--text-color)' }}
+                />
+              </div>
+
+              {/* 구분 (드롭다운 가독성 수정) */}
+              <div>
+                <label style={{ display: 'block', fontSize: '13px', marginBottom: '5px', fontWeight: 'bold' }}>구분</label>
                 <select
                   value={role}
                   onChange={(e) => setRole(e.target.value)}
-                  style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid var(--border-color)', backgroundColor: 'var(--input-bg)', color: 'var(--text-color)' }}
+                  style={{
+                    width: '100%',
+                    padding: '10px',
+                    borderRadius: '6px',
+                    border: '1px solid var(--border-color)',
+                    backgroundColor: 'var(--input-bg)',
+                    color: 'var(--text-color)',
+                    fontWeight: 'bold',
+                    cursor: 'pointer'
+                  }}
                 >
-                  <option value="student">학생</option>
-                  <option value="teacher">선생님</option>
+                  <option value="student" style={{ color: '#000000', backgroundColor: '#ffffff' }}>학생</option>
+                  <option value="teacher" style={{ color: '#000000', backgroundColor: '#ffffff' }}>선생님</option>
                 </select>
               </div>
 
+              {/* 프로필 사진 업로드 */}
               <div>
-                <label style={{ display: 'block', fontSize: '12px', marginBottom: '5px', fontWeight: 'bold' }}>프로필 사진</label>
+                <label style={{ display: 'block', fontSize: '13px', marginBottom: '5px', fontWeight: 'bold' }}>프로필 사진 업로드</label>
                 <input
                   type="file"
                   accept="image/*"
                   onChange={(e) => setFile(e.target.files[0])}
-                  style={{ fontSize: '12px', color: 'var(--text-color)' }}
+                  style={{ fontSize: '12px', color: 'var(--text-color)', marginTop: '5px' }}
                 />
               </div>
             </div>
@@ -185,14 +215,14 @@ export default function MembersPage() {
             <button
               type="submit"
               disabled={isUploading}
-              style={{ padding: '8px 16px', backgroundColor: '#10b981', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer' }}
+              style={{ padding: '10px 20px', backgroundColor: '#10b981', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', fontSize: '14px' }}
             >
               {isUploading ? '등록 중...' : '구성원 등록하기'}
             </button>
           </form>
         )}
 
-        {/* 선생님 섹션 */}
+        {/* 선생님 목록 */}
         <section style={{ marginBottom: '35px' }}>
           <h3 style={{ fontSize: '18px', borderBottom: '2px solid #2563eb', paddingBottom: '8px', color: '#2563eb' }}>👨‍🏫 선생님</h3>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '20px', marginTop: '15px' }}>
@@ -214,7 +244,7 @@ export default function MembersPage() {
           </div>
         </section>
 
-        {/* 학생 섹션 */}
+        {/* 학생 목록 */}
         <section>
           <h3 style={{ fontSize: '18px', borderBottom: '2px solid #2563eb', paddingBottom: '8px', color: '#2563eb' }}>🎓 학생</h3>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '20px', marginTop: '15px' }}>
