@@ -7,53 +7,55 @@ import Link from 'next/link';
 
 export default function LoginPage() {
   const [isSignUp, setIsSignUp] = useState(false);
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [nickname, setNickname] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [infoMsg, setInfoMsg] = useState('');
   const router = useRouter();
-
-  // 아이디를 이메일 주소 형태로 변환 (@jeonin.gwe.hs.kr 자동 결합)
-  const formatEmail = (id) => {
-    const cleanId = id.trim();
-    if (cleanId.includes('@')) return cleanId;
-    return `${cleanId}@jeonin.gwe.hs.kr`;
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErrorMsg('');
     setInfoMsg('');
 
-    if (!username || !password) {
-      setErrorMsg('아이디와 비밀번호를 모두 입력해주세요.');
+    if (!email || !password) {
+      setErrorMsg('이메일과 비밀번호를 입력해 주세요.');
       return;
     }
 
-    const email = formatEmail(username);
-
     if (isSignUp) {
-      // 1. 회원가입 시도
+      if (!nickname.trim()) {
+        setErrorMsg('닉네임을 입력해 주세요.');
+        return;
+      }
+
+      // 회원가입
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
+        options: {
+          data: {
+            nickname: nickname.trim(),
+            warning_count: 0 // 경고 횟수 기본값 0
+          }
+        }
       });
 
       if (error) {
-        // 이미 가입된 계정인 경우 처리
-        if (error.message.includes('User already registered') || error.status === 400) {
-          alert('회원가입이 되셨습니다.');
-          setIsSignUp(false); // 로그인 모드로 전환
-          setInfoMsg('이미 가입된 계정입니다. 비밀번호를 입력해 로그인해주세요.');
+        if (error.message.includes('already registered') || error.status === 400) {
+          alert('이미 회원가입이 되셨습니다. 로그인 화면으로 이동합니다.');
+          setIsSignUp(false);
         } else {
           setErrorMsg(`회원가입 실패: ${error.message}`);
         }
       } else if (data.user) {
-        alert('회원가입이 완료되었습니다! 로그인 해주세요.');
+        alert('회원가입이 완료되었습니다! 로그인해 주세요.');
         setIsSignUp(false);
       }
     } else {
-      // 2. 로그인 시도
+      // 로그인
       const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -63,7 +65,7 @@ export default function LoginPage() {
         if (error.message.includes('Email not confirmed')) {
           setErrorMsg('Supabase 설정에서 Confirm email을 OFF로 변경해주세요.');
         } else {
-          setErrorMsg('아이디 또는 비밀번호가 올바르지 않습니다.');
+          setErrorMsg('이메일 또는 비밀번호가 올바르지 않습니다.');
         }
       } else {
         alert('로그인 성공!');
@@ -83,38 +85,58 @@ export default function LoginPage() {
         {infoMsg && <p style={{ color: '#10b981', fontSize: '13px', marginBottom: '15px', textAlign: 'center' }}>{infoMsg}</p>}
 
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+          {/* 이메일 입력 */}
           <div>
-            <label style={{ display: 'block', fontSize: '13px', marginBottom: '5px', fontWeight: 'bold' }}>아이디 (Username)</label>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-              <input
-                type="text"
-                placeholder="아이디 입력"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                style={{ flex: 1, padding: '10px', borderRadius: '6px', border: '1px solid var(--border-color)', backgroundColor: 'var(--input-bg)', color: 'var(--text-color)' }}
-              />
-            </div>
-            <span style={{ fontSize: '11px', color: 'var(--text-sub)', marginTop: '3px', display: 'block' }}>
-              * 관리자 권한은 특정한 아이디 규칙에 따라 부여됩니다.
-            </span>
-          </div>
-
-          <div>
-            <label style={{ display: 'block', fontSize: '13px', marginBottom: '5px', fontWeight: 'bold' }}>비밀번호</label>
+            <label style={{ display: 'block', fontSize: '13px', marginBottom: '5px', fontWeight: 'bold' }}>이메일 주소</label>
             <input
-              type="password"
-              placeholder="비밀번호 (6자리 이상)"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              type="email"
+              placeholder="example@domain.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid var(--border-color)', backgroundColor: 'var(--input-bg)', color: 'var(--text-color)', boxSizing: 'border-box' }}
             />
+          </div>
+
+          {/* 회원가입 시 닉네임 추가 입력 */}
+          {isSignUp && (
+            <div>
+              <label style={{ display: 'block', fontSize: '13px', marginBottom: '5px', fontWeight: 'bold' }}>닉네임</label>
+              <input
+                type="text"
+                placeholder="사용할 닉네임 입력"
+                value={nickname}
+                onChange={(e) => setNickname(e.target.value)}
+                style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid var(--border-color)', backgroundColor: 'var(--input-bg)', color: 'var(--text-color)', boxSizing: 'border-box' }}
+              />
+            </div>
+          )}
+
+          {/* 비밀번호 입력 (숨김 / 보임 토글) */}
+          <div>
+            <label style={{ display: 'block', fontSize: '13px', marginBottom: '5px', fontWeight: 'bold' }}>비밀번호</label>
+            <div style={{ position: 'relative' }}>
+              <input
+                type={showPassword ? 'text' : 'password'}
+                placeholder="비밀번호 입력 (6자리 이상)"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                style={{ width: '100%', padding: '10px 40px 10px 10px', borderRadius: '6px', border: '1px solid var(--border-color)', backgroundColor: 'var(--input-bg)', color: 'var(--text-color)', boxSizing: 'border-box' }}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', fontSize: '16px' }}
+              >
+                {showPassword ? '👁️' : '🙈'}
+              </button>
+            </div>
           </div>
 
           <button
             type="submit"
             style={{ padding: '12px', backgroundColor: '#2563eb', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', marginTop: '10px' }}
           >
-            {isSignUp ? '회원가입 하기' : '로그인 하기'}
+            {isSignUp ? '회원가입 완료' : '로그인'}
           </button>
         </form>
 
@@ -122,14 +144,14 @@ export default function LoginPage() {
           {isSignUp ? (
             <p>
               이미 계정이 있으신가요?{' '}
-              <button onClick={() => { setIsSignUp(false); setErrorMsg(''); setInfoMsg(''); }} style={{ background: 'none', border: 'none', color: '#2563eb', fontWeight: 'bold', cursor: 'pointer' }}>
+              <button onClick={() => { setIsSignUp(false); setErrorMsg(''); }} style={{ background: 'none', border: 'none', color: '#2563eb', fontWeight: 'bold', cursor: 'pointer' }}>
                 로그인으로 이동
               </button>
             </p>
           ) : (
             <p>
               계정이 없으신가요?{' '}
-              <button onClick={() => { setIsSignUp(true); setErrorMsg(''); setInfoMsg(''); }} style={{ background: 'none', border: 'none', color: '#2563eb', fontWeight: 'bold', cursor: 'pointer' }}>
+              <button onClick={() => { setIsSignUp(true); setErrorMsg(''); }} style={{ background: 'none', border: 'none', color: '#2563eb', fontWeight: 'bold', cursor: 'pointer' }}>
                 회원가입하기
               </button>
             </p>
