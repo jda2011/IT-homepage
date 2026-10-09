@@ -14,7 +14,12 @@ export default function HomePage() {
   const [isEditingMotto, setIsEditingMotto] = useState(false);
   const [newMottoInput, setNewMottoInput] = useState('');
   const [isUploading, setIsUploading] = useState(false);
-  const [recentPosts, setRecentPosts] = useState([]);
+  
+  // 공지사항 관련 상태
+  const [notices, setNotices] = useState([]);
+  const [showNoticeForm, setShowNoticeForm] = useState(false);
+  const [noticeTitle, setNoticeTitle] = useState('');
+  const [noticeContent, setNoticeContent] = useState('');
 
   useEffect(() => {
     const init = async () => {
@@ -25,27 +30,27 @@ export default function HomePage() {
       }
       fetchMainPhoto();
       fetchClassMotto();
-      fetchRecentPosts();
+      fetchNotices();
     };
     init();
   }, []);
 
   const fetchMainPhoto = async () => {
-    const { data } = await supabase.from('settings').select('value').eq('key', 'main_photo').single();
+    const { data } = await supabase.from('settings').select('value').eq('key', 'main_photo').maybeSingle();
     if (data?.value) setMainPhotoUrl(data.value);
   };
 
   const fetchClassMotto = async () => {
-    const { data } = await supabase.from('settings').select('value').eq('key', 'class_motto').single();
+    const { data } = await supabase.from('settings').select('value').eq('key', 'class_motto').maybeSingle();
     if (data?.value) {
       setClassMotto(data.value);
       setNewMottoInput(data.value);
     }
   };
 
-  const fetchRecentPosts = async () => {
-    const { data } = await supabase.from('daily_posts').select('*').order('created_at', { ascending: false }).limit(3);
-    if (data) setRecentPosts(data);
+  const fetchNotices = async () => {
+    const { data } = await supabase.from('notices').select('*').order('created_at', { ascending: false }).limit(5);
+    if (data) setNotices(data);
   };
 
   const handleSaveMotto = async () => {
@@ -59,6 +64,23 @@ export default function HomePage() {
       alert('급훈이 수정되었습니다!');
     } else {
       alert(`급훈 수정 실패: ${error.message}`);
+    }
+  };
+
+  const handleCreateNotice = async (e) => {
+    e.preventDefault();
+    if (!isAdmin) return;
+    if (!noticeTitle.trim() || !noticeContent.trim()) return alert('제목과 내용을 모두 입력해주세요.');
+
+    const { error } = await supabase.from('notices').insert([{ title: noticeTitle, content: noticeContent }]);
+    if (!error) {
+      alert('공지사항이 등록되었습니다!');
+      setNoticeTitle('');
+      setNoticeContent('');
+      setShowNoticeForm(false);
+      fetchNotices();
+    } else {
+      alert(`공지사항 등록 실패: ${error.message}`);
     }
   };
 
@@ -78,7 +100,6 @@ export default function HomePage() {
       const publicUrl = urlData.publicUrl;
 
       await supabase.from('settings').upsert({ key: 'main_photo', value: publicUrl });
-
       setMainPhotoUrl(publicUrl);
       alert('메인 사진이 업데이트 되었습니다!');
     } catch (err) {
@@ -101,9 +122,8 @@ export default function HomePage() {
       <header style={{ borderBottom: '1px solid var(--border-color)', backgroundColor: 'var(--bg-card)' }}>
         <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '15px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           
-          {/* IT 로고 & 상단 제목 */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <img src="/logo.png" alt="IT 로고" style={{ width: '45px', height: '45px', borderRadius: '50%', objectFit: 'cover' }} />
+            <img src="/logo.png" alt="IT 로고" onError={(e) => { e.target.style.display='none'; }} style={{ width: '45px', height: '45px', borderRadius: '50%', objectFit: 'cover' }} />
             <div>
               <h1 style={{ fontSize: '20px', margin: 0, fontWeight: 'bold' }}>미래공학소스쿨 홈페이지</h1>
               <p style={{ fontSize: '13px', margin: 0, color: 'var(--text-sub)' }}>우리들의 따뜻한 소통 공간</p>
@@ -148,7 +168,6 @@ export default function HomePage() {
         
         {/* 설명 배너 & 급훈 영역 */}
         <section style={{ backgroundColor: '#2563eb', color: '#fff', padding: '30px', borderRadius: '12px', marginBottom: '20px' }}>
-          
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
             {isEditingMotto ? (
               <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
@@ -182,6 +201,63 @@ export default function HomePage() {
           </p>
         </section>
 
+        {/* 📢 공지사항 섹션 */}
+        <section style={{ backgroundColor: 'var(--bg-card)', padding: '20px', borderRadius: '12px', border: '1px solid var(--border-color)', marginBottom: '25px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+            <h3 style={{ margin: 0, fontSize: '18px' }}>📢 소스쿨 공지사항</h3>
+            {isAdmin && (
+              <button
+                onClick={() => setShowNoticeForm(!showNoticeForm)}
+                style={{ padding: '6px 12px', backgroundColor: '#2563eb', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '12px', cursor: 'pointer', fontWeight: 'bold' }}
+              >
+                {showNoticeForm ? '닫기' : '✏️ 공지사항 작성'}
+              </button>
+            )}
+          </div>
+
+          {/* 관리자 전용 공지사항 작성 폼 */}
+          {isAdmin && showNoticeForm && (
+            <form onSubmit={handleCreateNotice} style={{ marginBottom: '20px', padding: '15px', backgroundColor: 'var(--bg-color)', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+              <input
+                type="text"
+                placeholder="공지사항 제목"
+                value={noticeTitle}
+                onChange={(e) => setNoticeTitle(e.target.value)}
+                style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid var(--border-color)', backgroundColor: 'var(--input-bg)', color: 'var(--text-color)', marginBottom: '10px', boxSizing: 'border-box' }}
+              />
+              <textarea
+                placeholder="공지사항 내용을 작성하세요..."
+                value={noticeContent}
+                onChange={(e) => setNoticeContent(e.target.value)}
+                rows={3}
+                style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid var(--border-color)', backgroundColor: 'var(--input-bg)', color: 'var(--text-color)', marginBottom: '10px', boxSizing: 'border-box' }}
+              />
+              <button type="submit" style={{ padding: '8px 16px', backgroundColor: '#10b981', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', fontSize: '13px' }}>
+                등록하기
+              </button>
+            </form>
+          )}
+
+          {/* 공지사항 목록 */}
+          <div>
+            {notices.length > 0 ? (
+              notices.map((item) => (
+                <div key={item.id} style={{ borderBottom: '1px solid var(--border-color)', padding: '12px 0' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '5px' }}>
+                    <h4 style={{ margin: 0, fontSize: '16px', fontWeight: 'bold' }}>📌 {item.title}</h4>
+                    <span style={{ fontSize: '12px', color: 'var(--text-sub)' }}>
+                      {new Date(item.created_at).toLocaleDateString()}
+                    </span>
+                  </div>
+                  <p style={{ margin: 0, fontSize: '14px', color: 'var(--text-sub)', whiteSpace: 'pre-wrap' }}>{item.content}</p>
+                </div>
+              ))
+            ) : (
+              <p style={{ color: 'var(--text-sub)', margin: 0, fontSize: '14px' }}>등록된 공지사항이 없습니다.</p>
+            )}
+          </div>
+        </section>
+
         {/* 🖼️ 메인 사진 영역 */}
         <section style={{ backgroundColor: 'var(--bg-card)', padding: '20px', borderRadius: '12px', border: '1px solid var(--border-color)', marginBottom: '25px', textAlign: 'center' }}>
           <h3 style={{ margin: '0 0 15px 0', fontSize: '18px' }}>🖼️ 미래공학소스쿨 메인 사진</h3>
@@ -203,30 +279,6 @@ export default function HomePage() {
             </div>
           )}
         </section>
-
-        {/* 하단 요약 카드 */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
-          <div style={{ backgroundColor: 'var(--bg-card)', padding: '20px', borderRadius: '10px', border: '1px solid var(--border-color)' }}>
-            <h3 style={{ margin: '0 0 15px 0', fontSize: '18px' }}>💬 최근 하루 글</h3>
-            <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-              {recentPosts.length > 0 ? (
-                recentPosts.map((post) => (
-                  <li key={post.id} style={{ padding: '8px 0', borderBottom: '1px solid var(--border-color)', fontSize: '14px' }}>📌 {post.text}</li>
-                ))
-              ) : (
-                <li style={{ padding: '10px 0', color: 'var(--text-sub)', fontSize: '14px' }}>등록된 글이 없습니다.</li>
-              )}
-            </ul>
-          </div>
-          
-          <div style={{ backgroundColor: 'var(--bg-card)', padding: '20px', borderRadius: '10px', border: '1px solid var(--border-color)' }}>
-            <h3 style={{ margin: '0 0 15px 0', fontSize: '18px' }}>👥 소스쿨 구성원</h3>
-            <p style={{ color: 'var(--text-sub)', fontSize: '14px', marginBottom: '15px' }}>선생님과 구성원들의 프로필 및 사진을 확인하세요.</p>
-            <Link href="/members" style={{ display: 'block', textAlign: 'center', padding: '10px', backgroundColor: '#2563eb', color: '#fff', borderRadius: '6px', textDecoration: 'none', fontWeight: 'bold' }}>
-              구성원 보러가기 →
-            </Link>
-          </div>
-        </div>
 
       </main>
     </div>
