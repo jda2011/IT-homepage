@@ -16,7 +16,7 @@
   --input-bg: #1e293b;
 }
 
-body {
+html, body {
   background-color: var(--bg-color) !important;
   color: var(--text-color) !important;
   margin: 0;
