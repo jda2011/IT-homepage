@@ -8,6 +8,7 @@ import Link from 'next/link';
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false); // 비밀번호 보임/숨김 상태
   const [isSignUp, setIsSignUp] = useState(false);
   const router = useRouter();
 
@@ -46,10 +47,10 @@ export default function LoginPage() {
   };
 
   return (
-    <div style={{ padding: '40px', maxWidth: '400px', margin: '60px auto', color: '#fff', backgroundColor: '#1e293b', borderRadius: '12px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}>
+    <div style={{ padding: '40px', maxWidth: '400px', margin: '60px auto', color: 'var(--text-color)', backgroundColor: 'var(--bg-card)', borderRadius: '12px', border: '1px solid var(--border-color)', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}>
       {/* 홈으로 이동 버튼 */}
       <div style={{ marginBottom: '20px' }}>
-        <Link href="/" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '14px' }}>
+        <Link href="/" style={{ color: 'var(--text-sub)', textDecoration: 'none', fontSize: '14px' }}>
           ← 🏠 홈으로 돌아가기
         </Link>
       </div>
@@ -61,9 +62,9 @@ export default function LoginPage() {
           style={{
             flex: 1,
             padding: '10px',
-            backgroundColor: !isSignUp ? '#3b82f6' : '#334155',
-            color: '#fff',
-            border: 'none',
+            backgroundColor: !isSignUp ? '#2563eb' : 'transparent',
+            color: !isSignUp ? '#fff' : 'var(--text-color)',
+            border: '1px solid var(--border-color)',
             borderRadius: '6px',
             fontWeight: 'bold',
             cursor: 'pointer'
@@ -76,9 +77,9 @@ export default function LoginPage() {
           style={{
             flex: 1,
             padding: '10px',
-            backgroundColor: isSignUp ? '#3b82f6' : '#334155',
-            color: '#fff',
-            border: 'none',
+            backgroundColor: isSignUp ? '#2563eb' : 'transparent',
+            color: isSignUp ? '#fff' : 'var(--text-color)',
+            border: '1px solid var(--border-color)',
             borderRadius: '6px',
             fontWeight: 'bold',
             cursor: 'pointer'
@@ -88,29 +89,49 @@ export default function LoginPage() {
         </button>
       </div>
 
-      <h1>{isSignUp ? '📝 회원가입' : '🔐 로그인'}</h1>
+      <h1 style={{ fontSize: '22px', marginBottom: '15px' }}>{isSignUp ? '📝 회원가입' : '🔐 로그인'}</h1>
 
-      <form onSubmit={handleAuth} style={{ display: 'flex', flexDirection: 'column', gap: '15px', marginTop: '20px' }}>
+      <form onSubmit={handleAuth} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
         <div>
-          <label style={{ display: 'block', marginBottom: '5px', fontSize: '14px', color: '#cbd5e1' }}>이메일</label>
+          <label style={{ display: 'block', marginBottom: '5px', fontSize: '14px', color: 'var(--text-sub)' }}>이메일</label>
           <input
             type="email"
-            placeholder="example@email.com"
+            placeholder="example@jeonin.gwe.hs.kr"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #475569', backgroundColor: '#0f172a', color: '#fff', boxSizing: 'border-box' }}
+            style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid var(--border-color)', backgroundColor: 'var(--input-bg)', color: 'var(--text-color)', boxSizing: 'border-box' }}
           />
         </div>
 
         <div>
-          <label style={{ display: 'block', marginBottom: '5px', fontSize: '14px', color: '#cbd5e1' }}>비밀번호</label>
-          <input
-            type="password"
-            placeholder="비밀번호 입력"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #475569', backgroundColor: '#0f172a', color: '#fff', boxSizing: 'border-box' }}
-          />
+          <label style={{ display: 'block', marginBottom: '5px', fontSize: '14px', color: 'var(--text-sub)' }}>비밀번호</label>
+          {/* 비밀번호 입력창 + 보임/숨김 버튼 감싸는 박스 */}
+          <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+            <input
+              type={showPassword ? 'text' : 'password'}
+              placeholder="비밀번호 입력"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              style={{ width: '100%', padding: '10px', paddingRight: '45px', borderRadius: '6px', border: '1px solid var(--border-color)', backgroundColor: 'var(--input-bg)', color: 'var(--text-color)', boxSizing: 'border-box' }}
+            />
+            {/* 비밀번호 보임/숨김 토글 버튼 */}
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              style={{
+                position: 'absolute',
+                right: '8px',
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                fontSize: '16px',
+                padding: '4px'
+              }}
+              title={showPassword ? '비밀번호 숨기기' : '비밀번호 보기'}
+            >
+              {showPassword ? '👁️' : '🙈'}
+            </button>
+          </div>
         </div>
 
         <button
