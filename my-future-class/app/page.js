@@ -180,3 +180,16 @@ export default function HomePage() {
     </div>
   );
 }
+
+{/* 전인고 로고 이미지 */}
+<div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+  <img 
+    src="/logo.png" 
+    alt="전인고 로고" 
+    style={{ width: '45px', height: '45px', objectFit: 'contain' }} 
+  />
+  <div>
+    <h1 style={{ fontSize: '20px', margin: 0, fontWeight: 'bold' }}>전인고등학교 학급 홈페이지</h1>
+    <p style={{ fontSize: '13px', margin: 0, color: 'var(--text-sub)' }}>우리들의 따뜻한 소통 공간</p>
+  </div>
+</div>
