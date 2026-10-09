@@ -9,7 +9,11 @@ import ThemeToggle from '../components/ThemeToggle';
 export default function HomePage() {
   const [user, setUser] = useState(null);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [mainPhotoUrl, setMainPhotoUrl] = useState('');
+  
+  // 메인 사진 배열 및 슬라이드 인덱스 관리
+  const [mainPhotos, setMainPhotos] = useState([]);
+  const [currentIndex, setCurrentIndex] = useState(0);
+
   const [classMotto, setClassMotto] = useState('배움과 성장이 있는 공간');
   const [isEditingMotto, setIsEditingMotto] = useState(false);
   const [newMottoInput, setNewMottoInput] = useState('');
@@ -24,16 +28,47 @@ export default function HomePage() {
       if (user) {
         setIsAdmin(checkIsAdmin(user.email));
       }
-      fetchMainPhoto();
+      fetchMainPhotos();
       fetchClassMotto();
       fetchRecentPosts();
     };
     init();
   }, []);
 
-  const fetchMainPhoto = async () => {
-    const { data } = await supabase.from('settings').select('value').eq('key', 'main_photo').maybeSingle();
-    if (data?.value) setMainPhotoUrl(data.value);
+  // 1분(60초) 타이머 설정 (사진이 2개 이상일 때 자동 전환)
+  useEffect(() => {
+    if (mainPhotos.length <= 1) return;
+
+    const timer = setInterval(() => {
+      setCurrentIndex((prevIndex) => (prevIndex + 1) % mainPhotos.length);
+    }, 60000); // 60,000ms = 1분
+
+    return () => clearInterval(timer);
+  }, [mainPhotos]);
+
+  // 메인 사진 목록 불러오기 (단일 URL 및 다중 URL 호환 처리)
+  const fetchMainPhotos = async () => {
+    const { data } = await supabase.from('settings').select('value').eq('key', 'main_photos').maybeSingle();
+    
+    if (data?.value) {
+      try {
+        const parsed = JSON.parse(data.value);
+        if (Array.isArray(parsed)) {
+          setMainPhotos(parsed);
+          return;
+        }
+      } catch (e) {
+        // 기존 단일 URL 구조일 경우 배열로 전환
+        setMainPhotos([data.value]);
+        return;
+      }
+    }
+
+    // 기존 main_photo 키 호환성 체크
+    const { data: singleData } = await supabase.from('settings').select('value').eq('key', 'main_photo').maybeSingle();
+    if (singleData?.value) {
+      setMainPhotos([singleData.value]);
+    }
   };
 
   const fetchClassMotto = async () => {
@@ -63,6 +98,7 @@ export default function HomePage() {
     }
   };
 
+  // 메인 사진 추가 업로드
   const handleMainPhotoUpload = async (e) => {
     const file = e.target.files[0];
     if (!file || !isAdmin) return;
@@ -78,14 +114,54 @@ export default function HomePage() {
       const { data: urlData } = supabase.storage.from('members').getPublicUrl(filePath);
       const publicUrl = urlData.publicUrl;
 
-      await supabase.from('settings').upsert({ key: 'main_photo', value: publicUrl });
-      setMainPhotoUrl(publicUrl);
-      alert('메인 사진이 업데이트 되었습니다!');
+      const updatedPhotos = [...mainPhotos, publicUrl];
+
+      const { error: dbError } = await supabase
+        .from('settings')
+        .upsert({ key: 'main_photos', value: JSON.stringify(updatedPhotos) });
+
+      if (dbError) throw dbError;
+
+      setMainPhotos(updatedPhotos);
+      setCurrentIndex(updatedPhotos.length - 1); // 새 사진으로 이동
+      alert('메인 사진이 추가 되었습니다!');
     } catch (err) {
       alert(`사진 업로드 실패: ${err.message}`);
     } finally {
       setIsUploading(false);
     }
+  };
+
+  // 특정 사진 삭제 (관리자 기능)
+  const handleDeletePhoto = async (indexToDelete) => {
+    if (!isAdmin) return;
+    if (!confirm('이 사진을 삭제하시겠습니까?')) return;
+
+    const updatedPhotos = mainPhotos.filter((_, idx) => idx !== indexToDelete);
+
+    const { error } = await supabase
+      .from('settings')
+      .upsert({ key: 'main_photos', value: JSON.stringify(updatedPhotos) });
+
+    if (!error) {
+      setMainPhotos(updatedPhotos);
+      if (currentIndex >= updatedPhotos.length && updatedPhotos.length > 0) {
+        setCurrentIndex(updatedPhotos.length - 1);
+      } else {
+        setCurrentIndex(0);
+      }
+      alert('사진이 삭제되었습니다.');
+    } else {
+      alert(`사진 삭제 실패: ${error.message}`);
+    }
+  };
+
+  const handlePrevPhoto = () => {
+    setCurrentIndex((prev) => (prev === 0 ? mainPhotos.length - 1 : prev - 1));
+  };
+
+  const handleNextPhoto = () => {
+    setCurrentIndex((prev) => (prev + 1) % mainPhotos.length);
   };
 
   const handleLogout = async () => {
@@ -125,8 +201,7 @@ export default function HomePage() {
             {user ? (
               <div style={{ fontSize: '14px', display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <span>
-                  👤 <strong>{user.user_metadata?.nickname || user.email.split('@')[0]}</strong> {isAdmin ? '👑' : ''}님 
-                  <span style={{ fontSize: '11px', color: '#ef4444', marginLeft: '5px' }}>(경고: {user.user_metadata?.warning_count || 0}회)</span>
+                  👤 <strong>{user.user_metadata?.nickname || user.email.split('@')[0]}</strong> {isAdmin ? '👑' : ''}님
                 </span>
                 <button onClick={handleLogout} style={{ padding: '6px 12px', backgroundColor: '#ef4444', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '12px' }}>
                   로그아웃
@@ -194,29 +269,66 @@ export default function HomePage() {
           </p>
         </section>
 
-        {/* 🖼️ 메인 사진 영역 */}
+        {/* 🖼️ 슬라이드쇼 메인 사진 영역 */}
         <section style={{ backgroundColor: 'var(--bg-card)', padding: '20px', borderRadius: '12px', border: '1px solid var(--border-color)', marginBottom: '25px', textAlign: 'center' }}>
-          <h3 style={{ margin: '0 0 15px 0', fontSize: '18px' }}>🖼️ 미래공학소스쿨 메인 사진</h3>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+            <h3 style={{ margin: 0, fontSize: '18px' }}>🖼️ 미래공학소스쿨 메인 사진</h3>
+            {mainPhotos.length > 1 && (
+              <span style={{ fontSize: '13px', color: 'var(--text-sub)', fontWeight: 'bold' }}>
+                ({currentIndex + 1} / {mainPhotos.length}) · 1분 자동 전환 중
+              </span>
+            )}
+          </div>
           
-          <div style={{ width: '100%', maxHeight: '450px', backgroundColor: 'var(--bg-color)', borderRadius: '8px', overflow: 'hidden', border: '1px dashed var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '220px' }}>
-            {mainPhotoUrl ? (
-              <img src={mainPhotoUrl} alt="메인 사진" style={{ width: '100%', maxHeight: '450px', objectFit: 'cover' }} />
+          <div style={{ position: 'relative', width: '100%', maxHeight: '450px', backgroundColor: 'var(--bg-color)', borderRadius: '8px', overflow: 'hidden', border: '1px dashed var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '220px' }}>
+            {mainPhotos.length > 0 ? (
+              <>
+                <img src={mainPhotos[currentIndex]} alt={`메인 사진 ${currentIndex + 1}`} style={{ width: '100%', maxHeight: '450px', objectFit: 'cover' }} />
+                
+                {/* 2개 이상일 때 이전/다음 버튼 표시 */}
+                {mainPhotos.length > 1 && (
+                  <>
+                    <button
+                      onClick={handlePrevPhoto}
+                      style={{ position: 'absolute', left: '15px', top: '50%', transform: 'translateY(-50%)', backgroundColor: 'rgba(0,0,0,0.5)', color: '#fff', border: 'none', borderRadius: '50%', width: '36px', height: '36px', cursor: 'pointer', fontSize: '18px' }}
+                    >
+                      ◀
+                    </button>
+                    <button
+                      onClick={handleNextPhoto}
+                      style={{ position: 'absolute', right: '15px', top: '50%', transform: 'translateY(-50%)', backgroundColor: 'rgba(0,0,0,0.5)', color: '#fff', border: 'none', borderRadius: '50%', width: '36px', height: '36px', cursor: 'pointer', fontSize: '18px' }}
+                    >
+                      ▶
+                    </button>
+                  </>
+                )}
+              </>
             ) : (
               <p style={{ color: 'var(--text-sub)' }}>등록된 메인 사진이 없습니다.</p>
             )}
           </div>
 
+          {/* 관리자 사진 관리 (업로드 & 삭제) */}
           {isAdmin && (
-            <div style={{ marginTop: '15px' }}>
+            <div style={{ marginTop: '15px', display: 'flex', justifyContent: 'center', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
               <label style={{ padding: '8px 16px', backgroundColor: '#10b981', color: '#fff', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '14px', display: 'inline-block' }}>
-                {isUploading ? '사진 업로드 중...' : '📷 메인 사진 변경하기'}
+                {isUploading ? '사진 업로드 중...' : '📷 사진 추가하기'}
                 <input type="file" accept="image/*" onChange={handleMainPhotoUpload} style={{ display: 'none' }} disabled={isUploading} />
               </label>
+
+              {mainPhotos.length > 0 && (
+                <button
+                  onClick={() => handleDeletePhoto(currentIndex)}
+                  style={{ padding: '8px 16px', backgroundColor: '#ef4444', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: 'bold', fontSize: '14px', cursor: 'pointer' }}
+                >
+                  🗑️ 현재 사진 삭제
+                </button>
+              )}
             </div>
           )}
         </section>
 
-        {/* 4. 최근 하루 글 & 소스쿨 구성원 복구 영역 */}
+        {/* 최근 하루 글 & 소스쿨 구성원 영역 */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
           <div style={{ backgroundColor: 'var(--bg-card)', padding: '20px', borderRadius: '10px', border: '1px solid var(--border-color)' }}>
             <h3 style={{ margin: '0 0 15px 0', fontSize: '18px' }}>💬 최근 하루 글</h3>
