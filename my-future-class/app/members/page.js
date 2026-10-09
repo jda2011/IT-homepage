@@ -269,3 +269,20 @@ export default function MembersPage() {
     </div>
   );
 }
+
+<nav style={{ borderTop: '1px solid var(--border-color)', backgroundColor: 'var(--bg-color)' }}>
+  <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '0 20px', display: 'flex', gap: '25px', flexWrap: 'wrap' }}>
+    <Link href="/" style={{ padding: '14px 0', color: 'var(--text-color)', textDecoration: 'none', fontWeight: '500' }}>
+      🏠 메인 홈
+    </Link>
+    <Link href="/daily" style={{ padding: '14px 0', color: 'var(--text-color)', textDecoration: 'none', fontWeight: '500' }}>
+      💬 하루 글 (게시판)
+    </Link>
+    <Link href="/members" style={{ padding: '14px 0', color: 'var(--text-color)', textDecoration: 'none', fontWeight: '500' }}>
+      👥 소스쿨 구성원
+    </Link>
+    <Link href="/notice" style={{ padding: '14px 0', color: 'var(--text-color)', textDecoration: 'none', fontWeight: '500' }}>
+      📢 소스쿨 공지
+    </Link>
+  </div>
+</nav>
