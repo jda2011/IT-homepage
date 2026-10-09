@@ -284,3 +284,24 @@ export default function HomePage() {
     </div>
   );
 }
+
+{/* IT 로고 이미지 */}
+<div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+  <img 
+    src="/logo.png" 
+    alt="IT 로고" 
+    onError={(e) => {
+      // 이미지 로드 실패 시 텍스트 아이콘으로 깔끔하게 표시
+      e.target.style.display = 'none';
+      e.target.nextSibling.style.display = 'flex';
+    }}
+    style={{ width: '45px', height: '45px', borderRadius: '50%', objectFit: 'cover' }} 
+  />
+  <div style={{ display: 'none', width: '45px', height: '45px', borderRadius: '50%', backgroundColor: '#2563eb', color: '#fff', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '18px' }}>
+    IT
+  </div>
+  <div>
+    <h1 style={{ fontSize: '20px', margin: 0, fontWeight: 'bold' }}>미래공학소스쿨 홈페이지</h1>
+    <p style={{ fontSize: '13px', margin: 0, color: 'var(--text-sub)' }}>우리들의 따뜻한 소통 공간</p>
+  </div>
+</div>
