@@ -4,19 +4,17 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { checkIsAdmin } from '../../lib/admin';
 import Link from 'next/link';
-import ThemeToggle from '../../components/ThemeToggle';
 
 export default function MembersPage() {
   const [user, setUser] = useState(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [members, setMembers] = useState([]);
   
-  // 양식 입력 상태
-  const [name, setName] = useState('');          // 성함/이름
-  const [nickname, setNickname] = useState('');  // 이르름
-  const [role, setRole] = useState('student');    // 구분
+  const [name, setName] = useState('');
+  const [nickname, setNickname] = useState('');
+  const [role, setRole] = useState('student');
   const [year, setYear] = useState('2026');
-  const [file, setFile] = useState(null);         // 프로필 사진 업로드
+  const [file, setFile] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
   const [logoError, setLogoError] = useState(false);
 
@@ -55,7 +53,6 @@ export default function MembersPage() {
         imageUrl = urlData.publicUrl;
       }
 
-      // name에 이름과 (이르름)을 함께 저장하거나 DB 컬럼 구조에 지정
       const fullName = nickname.trim() ? `${name.trim()} (${nickname.trim()})` : name.trim();
 
       const { error } = await supabase.from('members').insert([
@@ -94,7 +91,7 @@ export default function MembersPage() {
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg-color)', color: 'var(--text-color)' }}>
-      {/* 1. 통일된 헤더 */}
+      {/* 통일 헤더 */}
       <header style={{ borderBottom: '1px solid var(--border-color)', backgroundColor: 'var(--bg-card)' }}>
         <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '15px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -112,10 +109,19 @@ export default function MembersPage() {
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <ThemeToggle />
             {user ? (
               <div style={{ fontSize: '14px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <span>👤 <strong>{user.user_metadata?.nickname || user.email.split('@')[0]}</strong> {isAdmin ? '👑' : ''}님</span>
+                <Link href="/profile" style={{ color: 'var(--text-color)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  {user.user_metadata?.avatar_url ? (
+                    <img src={user.user_metadata.avatar_url} alt="프로필" style={{ width: '28px', height: '28px', borderRadius: '50%', objectFit: 'cover' }} />
+                  ) : (
+                    <span>👤</span>
+                  )}
+                  <strong>{user.user_metadata?.nickname || user.email.split('@')[0]}</strong> {isAdmin ? '👑' : ''}님
+                </Link>
+                <Link href="/profile" style={{ padding: '4px 8px', backgroundColor: 'var(--border-color)', color: 'var(--text-color)', borderRadius: '4px', textDecoration: 'none', fontSize: '12px' }}>
+                  ⚙️ 개인 설정
+                </Link>
                 <button onClick={() => supabase.auth.signOut().then(() => window.location.reload())} style={{ padding: '6px 12px', backgroundColor: '#ef4444', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '12px' }}>
                   로그아웃
                 </button>
@@ -128,9 +134,9 @@ export default function MembersPage() {
           </div>
         </div>
 
-        {/* 2. 네비게이션 통일 */}
+        {/* 네비게이션 메뉴바 */}
         <nav style={{ borderTop: '1px solid var(--border-color)', backgroundColor: 'var(--bg-color)' }}>
-          <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '0 20px', display: 'flex', gap: '30px' }}>
+          <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '0 20px', display: 'flex', gap: '25px', flexWrap: 'wrap' }}>
             <Link href="/" style={{ padding: '14px 0', color: 'var(--text-color)', textDecoration: 'none', fontWeight: '500' }}>
               🏠 메인 홈
             </Link>
@@ -140,21 +146,28 @@ export default function MembersPage() {
             <Link href="/members" style={{ padding: '14px 0', color: '#2563eb', fontWeight: 'bold', textDecoration: 'none', borderBottom: '3px solid #2563eb' }}>
               👥 소스쿨 구성원
             </Link>
+            <Link href="/notice" style={{ padding: '14px 0', color: 'var(--text-color)', textDecoration: 'none', fontWeight: '500' }}>
+              📢 소스쿨 공지
+            </Link>
           </div>
         </nav>
       </header>
 
-      {/* 3. 본문 영역 */}
+      {/* 본문 영역 */}
       <main style={{ maxWidth: '1100px', margin: '25px auto', padding: '0 20px' }}>
-        <h2 style={{ fontSize: '22px', marginBottom: '20px' }}>👥 미래공학소스쿨 구성원 소개</h2>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+          <h2 style={{ fontSize: '22px', margin: 0 }}>👥 미래공학소스쿨 구성원 소개</h2>
+          <Link href="/" style={{ padding: '8px 14px', backgroundColor: 'var(--bg-card)', color: 'var(--text-color)', border: '1px solid var(--border-color)', borderRadius: '6px', textDecoration: 'none', fontSize: '13px', fontWeight: 'bold' }}>
+            🏠 메인 홈으로 돌아가기
+          </Link>
+        </div>
 
-        {/* 관리자 전용 신규 구성원 등록 양식 */}
+        {/* 관리자 신규 구성원 등록 양식 */}
         {isAdmin && (
           <form onSubmit={handleAddMember} style={{ backgroundColor: 'var(--bg-card)', padding: '20px', borderRadius: '12px', border: '1px solid var(--border-color)', marginBottom: '30px' }}>
             <h3 style={{ margin: '0 0 15px 0', fontSize: '16px' }}>➕ 신규 구성원 등록 (관리자)</h3>
             
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px', marginBottom: '15px' }}>
-              {/* 성함/이름 */}
               <div>
                 <label style={{ display: 'block', fontSize: '13px', marginBottom: '5px', fontWeight: 'bold' }}>성함/이름</label>
                 <input
@@ -166,7 +179,6 @@ export default function MembersPage() {
                 />
               </div>
 
-              {/* 이르름 */}
               <div>
                 <label style={{ display: 'block', fontSize: '13px', marginBottom: '5px', fontWeight: 'bold' }}>이르름</label>
                 <input
@@ -178,7 +190,6 @@ export default function MembersPage() {
                 />
               </div>
 
-              {/* 구분 (드롭다운 가독성 수정) */}
               <div>
                 <label style={{ display: 'block', fontSize: '13px', marginBottom: '5px', fontWeight: 'bold' }}>구분</label>
                 <select
@@ -200,7 +211,6 @@ export default function MembersPage() {
                 </select>
               </div>
 
-              {/* 프로필 사진 업로드 */}
               <div>
                 <label style={{ display: 'block', fontSize: '13px', marginBottom: '5px', fontWeight: 'bold' }}>프로필 사진 업로드</label>
                 <input
@@ -269,20 +279,3 @@ export default function MembersPage() {
     </div>
   );
 }
-
-<nav style={{ borderTop: '1px solid var(--border-color)', backgroundColor: 'var(--bg-color)' }}>
-  <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '0 20px', display: 'flex', gap: '25px', flexWrap: 'wrap' }}>
-    <Link href="/" style={{ padding: '14px 0', color: 'var(--text-color)', textDecoration: 'none', fontWeight: '500' }}>
-      🏠 메인 홈
-    </Link>
-    <Link href="/daily" style={{ padding: '14px 0', color: 'var(--text-color)', textDecoration: 'none', fontWeight: '500' }}>
-      💬 하루 글 (게시판)
-    </Link>
-    <Link href="/members" style={{ padding: '14px 0', color: 'var(--text-color)', textDecoration: 'none', fontWeight: '500' }}>
-      👥 소스쿨 구성원
-    </Link>
-    <Link href="/notice" style={{ padding: '14px 0', color: 'var(--text-color)', textDecoration: 'none', fontWeight: '500' }}>
-      📢 소스쿨 공지
-    </Link>
-  </div>
-</nav>
