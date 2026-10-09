@@ -10,7 +10,7 @@ export default function HomePage() {
   const [user, setUser] = useState(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [mainPhotoUrl, setMainPhotoUrl] = useState('');
-  const [classMotto, setClassMotto] = useState('배움과 성장이 있는 공간'); // 기본 급훈
+  const [classMotto, setClassMotto] = useState('배움과 성장이 있는 공간');
   const [isEditingMotto, setIsEditingMotto] = useState(false);
   const [newMottoInput, setNewMottoInput] = useState('');
   const [isUploading, setIsUploading] = useState(false);
@@ -30,13 +30,11 @@ export default function HomePage() {
     init();
   }, []);
 
-  // 메인 사진 불러오기
   const fetchMainPhoto = async () => {
     const { data } = await supabase.from('settings').select('value').eq('key', 'main_photo').single();
     if (data?.value) setMainPhotoUrl(data.value);
   };
 
-  // 급훈 불러오기
   const fetchClassMotto = async () => {
     const { data } = await supabase.from('settings').select('value').eq('key', 'class_motto').single();
     if (data?.value) {
@@ -45,13 +43,11 @@ export default function HomePage() {
     }
   };
 
-  // 최근 하루 글 불러오기
   const fetchRecentPosts = async () => {
     const { data } = await supabase.from('daily_posts').select('*').order('created_at', { ascending: false }).limit(3);
     if (data) setRecentPosts(data);
   };
 
-  // 급훈 저장 (관리자 기능)
   const handleSaveMotto = async () => {
     if (!isAdmin) return;
     if (!newMottoInput.trim()) return alert('급훈을 입력해주세요.');
@@ -66,7 +62,6 @@ export default function HomePage() {
     }
   };
 
-  // 메인 사진 업로드 (관리자 기능)
   const handleMainPhotoUpload = async (e) => {
     const file = e.target.files[0];
     if (!file || !isAdmin) return;
@@ -106,9 +101,9 @@ export default function HomePage() {
       <header style={{ borderBottom: '1px solid var(--border-color)', backgroundColor: 'var(--bg-card)' }}>
         <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '15px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           
-          {/* 로고 & 상단 제목 */}
+          {/* IT 로고 & 상단 제목 */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <img src="/logo.png" alt="전인고 로고" style={{ width: '45px', height: '45px', objectFit: 'contain' }} />
+            <img src="/logo.png" alt="IT 로고" style={{ width: '45px', height: '45px', borderRadius: '50%', objectFit: 'cover' }} />
             <div>
               <h1 style={{ fontSize: '20px', margin: 0, fontWeight: 'bold' }}>미래공학소스쿨 홈페이지</h1>
               <p style={{ fontSize: '13px', margin: 0, color: 'var(--text-sub)' }}>우리들의 따뜻한 소통 공간</p>
@@ -154,7 +149,6 @@ export default function HomePage() {
         {/* 설명 배너 & 급훈 영역 */}
         <section style={{ backgroundColor: '#2563eb', color: '#fff', padding: '30px', borderRadius: '12px', marginBottom: '20px' }}>
           
-          {/* 급훈 (급훈: ~) */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
             {isEditingMotto ? (
               <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
@@ -200,7 +194,6 @@ export default function HomePage() {
             )}
           </div>
 
-          {/* 관리자 전용 사진 등록 버튼 */}
           {isAdmin && (
             <div style={{ marginTop: '15px' }}>
               <label style={{ padding: '8px 16px', backgroundColor: '#10b981', color: '#fff', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '14px', display: 'inline-block' }}>
