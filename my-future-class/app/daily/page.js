@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { checkIsAdmin } from '../../lib/admin';
 import Link from 'next/link';
-import ThemeToggle from '../../components/ThemeToggle';
 
 export default function DailyPage() {
   const [user, setUser] = useState(null);
@@ -57,7 +56,7 @@ export default function DailyPage() {
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg-color)', color: 'var(--text-color)' }}>
-      {/* 1. 상단 헤더 */}
+      {/* 상단 통일 헤더 */}
       <header style={{ borderBottom: '1px solid var(--border-color)', backgroundColor: 'var(--bg-card)' }}>
         <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '15px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -75,10 +74,19 @@ export default function DailyPage() {
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <ThemeToggle />
             {user ? (
               <div style={{ fontSize: '14px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <span>👤 <strong>{user.user_metadata?.nickname || user.email.split('@')[0]}</strong> {isAdmin ? '👑' : ''}님</span>
+                <Link href="/profile" style={{ color: 'var(--text-color)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  {user.user_metadata?.avatar_url ? (
+                    <img src={user.user_metadata.avatar_url} alt="프로필" style={{ width: '28px', height: '28px', borderRadius: '50%', objectFit: 'cover' }} />
+                  ) : (
+                    <span>👤</span>
+                  )}
+                  <strong>{user.user_metadata?.nickname || user.email.split('@')[0]}</strong> {isAdmin ? '👑' : ''}님
+                </Link>
+                <Link href="/profile" style={{ padding: '4px 8px', backgroundColor: 'var(--border-color)', color: 'var(--text-color)', borderRadius: '4px', textDecoration: 'none', fontSize: '12px' }}>
+                  ⚙️ 개인 설정
+                </Link>
                 <button onClick={() => supabase.auth.signOut().then(() => window.location.reload())} style={{ padding: '6px 12px', backgroundColor: '#ef4444', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '12px' }}>
                   로그아웃
                 </button>
@@ -91,9 +99,9 @@ export default function DailyPage() {
           </div>
         </div>
 
-        {/* 2. 네비게이션 */}
+        {/* 네비게이션 메뉴바 */}
         <nav style={{ borderTop: '1px solid var(--border-color)', backgroundColor: 'var(--bg-color)' }}>
-          <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '0 20px', display: 'flex', gap: '30px' }}>
+          <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '0 20px', display: 'flex', gap: '25px', flexWrap: 'wrap' }}>
             <Link href="/" style={{ padding: '14px 0', color: 'var(--text-color)', textDecoration: 'none', fontWeight: '500' }}>
               🏠 메인 홈
             </Link>
@@ -103,13 +111,21 @@ export default function DailyPage() {
             <Link href="/members" style={{ padding: '14px 0', color: 'var(--text-color)', textDecoration: 'none', fontWeight: '500' }}>
               👥 소스쿨 구성원
             </Link>
+            <Link href="/notice" style={{ padding: '14px 0', color: 'var(--text-color)', textDecoration: 'none', fontWeight: '500' }}>
+              📢 소스쿨 공지
+            </Link>
           </div>
         </nav>
       </header>
 
-      {/* 3. 본문 영역 */}
+      {/* 본문 영역 */}
       <main style={{ maxWidth: '1100px', margin: '25px auto', padding: '0 20px' }}>
-        <h2 style={{ fontSize: '22px', marginBottom: '20px' }}>💬 하루 글 한줄 게시판</h2>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+          <h2 style={{ fontSize: '22px', margin: 0 }}>💬 하루 글 한줄 게시판</h2>
+          <Link href="/" style={{ padding: '8px 14px', backgroundColor: 'var(--bg-card)', color: 'var(--text-color)', border: '1px solid var(--border-color)', borderRadius: '6px', textDecoration: 'none', fontSize: '13px', fontWeight: 'bold' }}>
+            🏠 메인 홈으로 돌아가기
+          </Link>
+        </div>
 
         {/* 글 작성 폼 */}
         {user ? (
@@ -135,7 +151,7 @@ export default function DailyPage() {
           </p>
         )}
 
-        {/* 글 목록 (닉네임 + 날짜 표시) */}
+        {/* 글 목록 (닉네임 + 날짜) */}
         <div style={{ backgroundColor: 'var(--bg-card)', borderRadius: '12px', border: '1px solid var(--border-color)', padding: '15px' }}>
           {posts.length > 0 ? (
             posts.map((post) => (
@@ -155,20 +171,3 @@ export default function DailyPage() {
     </div>
   );
 }
-
-<nav style={{ borderTop: '1px solid var(--border-color)', backgroundColor: 'var(--bg-color)' }}>
-  <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '0 20px', display: 'flex', gap: '25px', flexWrap: 'wrap' }}>
-    <Link href="/" style={{ padding: '14px 0', color: 'var(--text-color)', textDecoration: 'none', fontWeight: '500' }}>
-      🏠 메인 홈
-    </Link>
-    <Link href="/daily" style={{ padding: '14px 0', color: 'var(--text-color)', textDecoration: 'none', fontWeight: '500' }}>
-      💬 하루 글 (게시판)
-    </Link>
-    <Link href="/members" style={{ padding: '14px 0', color: 'var(--text-color)', textDecoration: 'none', fontWeight: '500' }}>
-      👥 소스쿨 구성원
-    </Link>
-    <Link href="/notice" style={{ padding: '14px 0', color: 'var(--text-color)', textDecoration: 'none', fontWeight: '500' }}>
-      📢 소스쿨 공지
-    </Link>
-  </div>
-</nav>
