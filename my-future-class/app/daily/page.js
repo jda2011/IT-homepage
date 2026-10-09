@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { supabase } from '@/lib/supabase';
 
 export default function Daily() {
   const [isAdmin, setIsAdmin] = useState(false);
@@ -11,7 +12,21 @@ export default function Daily() {
 
   const badWords = ['비난', '욕설'];
 
+  // DB에서 글 목록 불러오기
+  const fetchPosts = async () => {
+    const { data, error } = await supabase
+      .from('daily_posts')
+      .select('*')
+      .order('created_at', { ascending: false });
+    
+    if (!error && data) {
+      setPosts(data);
+    }
+  };
+
   useEffect(() => {
+    fetchPosts();
+
     if (typeof window !== 'undefined') {
       const confirmAdmin = window.confirm('관리자 권한을 허용하시겠습니까?');
       if (confirmAdmin) {
@@ -20,7 +35,8 @@ export default function Daily() {
     }
   }, []);
 
-  const handlePostSubmit = () => {
+  // 글 등록 (DB 저장)
+  const handlePostSubmit = async () => {
     if (isBanned) {
       alert('경고 3회 누적으로 글을 작성할 수 없습니다.');
       return;
@@ -35,15 +51,24 @@ export default function Daily() {
 
       if (newCount >= 3) {
         setIsBanned(true);
-        alert('경고 3회가 누적되어 관리자의 승인 전까지 접근이 제한됩니다.');
+        alert('경고 3회가 누적되어 접근이 제한됩니다.');
       }
       return;
     }
 
     if (!inputText.trim()) return;
 
-    setPosts([...posts, { text: inputText, id: Date.now() }]);
-    setInputText('');
+    // Supabase DB에 저장
+    const { error } = await supabase
+      .from('daily_posts')
+      .insert([{ text: inputText }]);
+
+    if (error) {
+      alert('글 저장에 실패했습니다.');
+    } else {
+      setInputText('');
+      fetchPosts(); // 목록 다시 불러오기
+    }
   };
 
   if (isBanned && !isAdmin) {
